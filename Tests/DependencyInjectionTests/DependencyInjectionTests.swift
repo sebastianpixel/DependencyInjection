@@ -2,10 +2,12 @@ import XCTest
 @testable import DependencyInjection
 
 protocol DummyProtocol: AnyObject {}
+protocol AnotherDummyProtocol: AnyObject {}
+protocol YetAnotherDummyProtocol: AnyObject {}
 
 final class DependencyInjectionTests: XCTestCase {
 
-    private class DummyClass: DummyProtocol {}
+    private class DummyClass: DummyProtocol, AnotherDummyProtocol, YetAnotherDummyProtocol {}
 
     @LazyInject private var dummy: DummyProtocol
 
@@ -20,8 +22,8 @@ final class DependencyInjectionTests: XCTestCase {
     }
 
     func testLazyInjectPropertyWrapperWithNewInstanceProtocolConformance() {
-        DIContainer.shared.register(New(DummyClass() as DummyProtocol))
-        XCTAssert(dummy !== DIContainer.shared.resolve(DummyProtocol.self))
+        DIContainer.shared.register(New(DummyClass() as AnotherDummyProtocol))
+        XCTAssert(dummy !== DIContainer.shared.resolve(AnotherDummyProtocol.self))
     }
 
     func testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance() {
@@ -37,9 +39,14 @@ final class DependencyInjectionTests: XCTestCase {
         XCTAssert(DummyWithInjectedProperty().injectedProperty === DIContainer.shared.resolve(DummyProtocol.self))
     }
 
+    func testAliasesReferenceSameInstance() {
+        DIContainer.shared.register(Shared(DummyClass(), as: DummyProtocol.self, YetAnotherDummyProtocol.self))
+        XCTAssert(DIContainer.shared.resolve(DummyProtocol.self) === DIContainer.shared.resolve(YetAnotherDummyProtocol.self))
+    }
+
     func testOverrideRegistrationFromProductionInTests() {
         DIContainer.shared.register(Shared(DummyClass() as DummyProtocol))
-        XCTAssert(DIContainer.shared.resolve(DummyProtocol.self) === DIContainer.shared.resolve(DummyProtocol.self))
+        XCTAssert(DIContainer.shared.resolve(DummyProtocol.self) !== DIContainer.shared.resolve(DummyProtocol.self))
 
         DIContainer.shared.register(New(DummyClass() as DummyProtocol))
         XCTAssert(DIContainer.shared.resolve(DummyProtocol.self) !== DIContainer.shared.resolve(DummyProtocol.self))
@@ -51,6 +58,7 @@ final class DependencyInjectionTests: XCTestCase {
         ("testLazyInjectPropertyWrapperWithNewInstanceProtocolConformance", testLazyInjectPropertyWrapperWithNewInstanceProtocolConformance),
         ("testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance", testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance),
         ("testInjectPropertyWrapper", testInjectPropertyWrapper),
+        ("testAliasesReferenceSameInstance", testAliasesReferenceSameInstance),
         ("testOverrideRegistrationFromProductionInTests", testOverrideRegistrationFromProductionInTests)
     ]
 }
