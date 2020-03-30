@@ -38,5 +38,5 @@ By doing so registrations made in production code could for example be overridde
 
 Instances can also be registered with multiple alias protocols that each only expose certain parts of their functionality:
 ```
-DIContainer.shared.register(Shared(RouterImpl(), as: Router.self, Navigator.self))
+DIContainer.shared.register(Shared(RouterImpl.init, as: Router.self, Navigator.self))
 ```
