@@ -5,7 +5,7 @@ public struct Inject<T> {
     public let wrappedValue: T
 
     public init() {
-        wrappedValue = DIContainer.shared.resolve(T.self)
+        wrappedValue = DIContainer.resolve(T.self)
     }
 }
 
@@ -18,7 +18,7 @@ public class LazyInject<T> {
         if let value = value {
             return value
         } else {
-            let value = DIContainer.shared.resolve(T.self)
+            let value = DIContainer.resolve(T.self)
             self.value = value
             return value
         }
@@ -27,28 +27,31 @@ public class LazyInject<T> {
     public init() {}
 }
 
-public protocol Resolver {
-    func resolve<T>() -> T
-    func resolve<T>(_: T.Type) -> T
-}
-
 public final class DIContainer {
     private var registrations = [ObjectIdentifier: Registration]()
     private var sharedInstances = [ObjectIdentifier: Any]()
     private var typeAliases = [ObjectIdentifier: ObjectIdentifier]()
 
-    public static let shared = DIContainer()
+    private static let shared = DIContainer()
+
+    public static let register = shared as Registrar
+    public static let resolve = shared as Resolver
 
     private init() {}
 }
 
+public protocol Resolver {
+    func callAsFunction<T>() -> T
+    func callAsFunction<T>(_: T.Type) -> T
+}
+
 extension DIContainer: Resolver {
 
-    public func resolve<T>() -> T {
-        resolve(T.self)
+    public func callAsFunction<T>() -> T {
+        callAsFunction(T.self)
     }
 
-    public func resolve<T>(_: T.Type) -> T {
+    public func callAsFunction<T>(_: T.Type) -> T {
         let identifier = ObjectIdentifier(T.self)
         let type = typeAliases[identifier] ?? identifier
 
@@ -78,20 +81,24 @@ extension DIContainer: Resolver {
     }
 }
 
-extension DIContainer {
+@_functionBuilder
+public struct RegistrationBuilder {
+    public static func buildBlock(_ registrations: Registration...) -> [Registration] {
+        registrations
+    }
+}
 
-    @_functionBuilder
-    public struct RegistrationBuilder {
-        public static func buildBlock(_ routes: Registration...) -> [Registration] {
-            routes
-        }
+public protocol Registrar {
+    func callAsFunction(@RegistrationBuilder _ registrations: () -> [Registration])
+    func callAsFunction(_ registration: Registration)
+}
+
+extension DIContainer: Registrar {
+    public func callAsFunction(@RegistrationBuilder _ registrations: () -> [Registration]) {
+        registrations().forEach(callAsFunction)
     }
 
-    public func register(@RegistrationBuilder _ registrations: () -> [Registration]) {
-        registrations().forEach(register)
-    }
-
-    public func register(_ registration: Registration) {
+    public func callAsFunction(_ registration: Registration) {
         registration.aliases?.forEach {
             typeAliases[$0] = registration.identifier
         }
@@ -117,7 +124,7 @@ public extension Registration {
     }
 
     init<T>(_ initializer: @escaping (Resolver) -> T) {
-        self.init { initializer(DIContainer.shared) }
+        self.init { initializer(DIContainer.resolve) }
     }
 
     init<T>(_ initializer: @escaping () -> T, as typeAliases: Any.Type...) {
@@ -129,7 +136,7 @@ public extension Registration {
     }
 
     init<T>(_ initializer: @escaping (Resolver) -> T, as typeAliases: Any.Type...) {
-        self.init(typeAliases: typeAliases) { initializer(DIContainer.shared) }
+        self.init(typeAliases: typeAliases) { initializer(DIContainer.resolve) }
     }
 }
 

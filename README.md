@@ -14,7 +14,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     override init() {
         super.init()
 
-        DIContainer.shared.register {
+        DIContainer.register {
             Shared(AppConfigurationImpl() as AppConfiguration)
             Shared(RouterImpl() as Router)
         }
@@ -33,18 +33,36 @@ As the initializers of the injected properties in this example would be called b
 
 Registering a dependency as `Shared` will always resolve to the same (identical) instance. To get a new instance in each property use `New`:
 ```Swift
-DIContainer.shared.register(New(MockRouter.init as Router))
+DIContainer.register(New(MockRouter.init as Router))
 ```
 By doing so registrations made in production code could for example be overridden by mock objects in tests that are not shared across objects.
 
 Instances can also be registered with multiple alias protocols that each only expose certain parts of their functionality:
 ```Swift
-DIContainer.shared.register(Shared(RouterImpl.init, as: Router.self, DeeplinkHandler.self))
+DIContainer.register(Shared(RouterImpl.init, as: Router.self, DeeplinkHandler.self))
 ```
 
 In case the registered dependencies depend on other dependencies themselves that should be passed via initializer injection there are overloads for registering `Shared` and `New` instances that pass a `Resolver` object in a closure:
 ```Swift
-DIContainer.shared.register {
-    Shared { RouterImpl(config: $0.resolve()) }
+DIContainer.register {
+    Shared { resolve in RouterImpl(config: resolve()) }
+}
+```
+
+As property wrappers can currently not be used inside function bodies, dependencies can be resolved "manually":
+```Swift
+func foo() {
+    DIContainer.resolve(Router.self)
+}
+```
+
+or if the compiler can infer the type to resolve:
+```Swift
+func foo() {
+    bar(router: DIContainer.resolve())
+}
+
+func bar(router: Router) {
+    // …
 }
 ```
