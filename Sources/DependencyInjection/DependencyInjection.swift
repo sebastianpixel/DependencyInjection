@@ -90,12 +90,17 @@ public struct RegistrationBuilder {
 
 public protocol Registrar {
     func callAsFunction(@RegistrationBuilder _ registrations: () -> [Registration])
+    func callAsFunction(@RegistrationBuilder _ registration: () -> Registration)
     func callAsFunction(_ registration: Registration)
 }
 
 extension DIContainer: Registrar {
     public func callAsFunction(@RegistrationBuilder _ registrations: () -> [Registration]) {
         registrations().forEach(callAsFunction)
+    }
+
+    public func callAsFunction(_ registration: () -> Registration) {
+        callAsFunction(registration())
     }
 
     public func callAsFunction(_ registration: Registration) {
