@@ -5,6 +5,9 @@ A microframework for dependency injection based on the service locator pattern u
 ## Usage
 On App start register dependencies by overriding AppDelegate's initializer:
 ```Swift
+import DependencyInjection
+import UIKit
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
