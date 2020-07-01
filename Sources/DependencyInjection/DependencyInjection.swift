@@ -11,7 +11,6 @@ public struct Inject<T> {
 
 @propertyWrapper
 public class LazyInject<T> {
-
     private var value: T?
 
     public var wrappedValue: T {
@@ -34,6 +33,12 @@ public final class DIContainer {
 
     private static let shared = DIContainer()
 
+    static func cleanUpForTesting() {
+        shared.registrations.removeAll()
+        shared.sharedInstances.removeAll()
+        shared.typeAliases.removeAll()
+    }
+
     public static let register = shared as Registrar
     public static let resolve = shared as Resolver
 
@@ -53,7 +58,7 @@ extension DIContainer: Resolver {
 
     public func callAsFunction<T>(_: T.Type) -> T {
         let identifier = ObjectIdentifier(T.self)
-        let type = typeAliases[identifier] ?? identifier
+        let type = typeAliases[identifier, default: identifier]
 
         guard let registration = registrations[type] else {
             fatalError("Configuration error: No initializer registered for type \"\(T.self)\".")
@@ -107,6 +112,11 @@ extension DIContainer: Registrar {
         registration.aliases?.forEach {
             typeAliases[$0] = registration.identifier
         }
+
+        // Identifier is an alias for itself in case a previously
+        // registered alias should be overridden e.g. for a test.
+        typeAliases[registration.identifier] = registration.identifier
+
         self.registrations[registration.identifier] = registration
     }
 }
