@@ -11,6 +11,12 @@ final class DependencyInjectionTests: XCTestCase {
 
     @LazyInject private var dummy: DummyProtocol
 
+    override func setUp() {
+        super.setUp()
+
+        DIContainer.cleanUpForTesting()
+    }
+
     func testSharedInstanceResolvesToIdenticalInstance() {
         DIContainer.register(Shared(DummyClass()))
         XCTAssert(DIContainer.resolve(DummyClass.self) === DIContainer.resolve(DummyClass.self))
@@ -22,8 +28,8 @@ final class DependencyInjectionTests: XCTestCase {
     }
 
     func testLazyInjectPropertyWrapperWithNewInstanceProtocolConformance() {
-        DIContainer.register(New(DummyClass() as AnotherDummyProtocol))
-        XCTAssert(dummy !== DIContainer.resolve(AnotherDummyProtocol.self))
+        DIContainer.register(New(DummyClass() as DummyProtocol))
+        XCTAssert(dummy !== DIContainer.resolve(DummyProtocol.self))
     }
 
     func testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance() {
@@ -46,10 +52,23 @@ final class DependencyInjectionTests: XCTestCase {
 
     func testOverrideRegistrationFromProductionInTests() {
         DIContainer.register(Shared(DummyClass() as DummyProtocol))
-        XCTAssert(DIContainer.resolve(DummyProtocol.self) !== DIContainer.resolve(DummyProtocol.self))
+        XCTAssert(DIContainer.resolve(DummyProtocol.self) === DIContainer.resolve(DummyProtocol.self))
 
         DIContainer.register(New(DummyClass() as DummyProtocol))
         XCTAssert(DIContainer.resolve(DummyProtocol.self) !== DIContainer.resolve(DummyProtocol.self))
+    }
+
+    func testOverrideOneAliasInTests() {
+        let sharedDummyClass = DummyClass()
+        DIContainer.register(Shared(sharedDummyClass, as: DummyProtocol.self, YetAnotherDummyProtocol.self))
+
+        XCTAssert(DIContainer.resolve(DummyProtocol.self) === sharedDummyClass)
+        XCTAssert(DIContainer.resolve(YetAnotherDummyProtocol.self) === sharedDummyClass)
+
+        DIContainer.register(New(DummyClass() as DummyProtocol))
+
+        XCTAssert(DIContainer.resolve(DummyProtocol.self) !== sharedDummyClass)
+        XCTAssert(DIContainer.resolve(YetAnotherDummyProtocol.self) === sharedDummyClass)
     }
 
     static var allTests = [
