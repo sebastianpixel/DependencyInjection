@@ -35,11 +35,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 As the initializers of the injected properties the example above would be called before the AppDelegate's initializer, it's necessary to separate usage and initialization of the injected property. `@LazyInject` will only resolve when its property is first accessed. To resolve properties eagerly use `@Inject` instead.
 
 ### Optional dependencies
-Dependencies that cannot be resolve can be simple be made `Optional`s.
+Dependencies that cannot be resolved can simply be marked as `Optional`s.
 ```Swift
 @Inject var player: MediaPlayer?
 ```
-During registration still a Non-`Optional` value would be provided.
+If no `MediaPlayer` instance is registered, `player` resolves to `nil`.
+Note: If an Optional would be registered `player` also resolves to `nil` as the registered type is not the expected `MediaPlayer` but `Optional<MediaPlayer>` in this case.
 
 ### Shared vs new instances
 Registering a dependency as `Shared` will always resolve to the same (identical) instance. To get a new instance in each property use `New`:
