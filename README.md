@@ -35,7 +35,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 As the initializers of the injected properties the example above would be called before the AppDelegate's initializer, it's necessary to separate usage and initialization of the injected property. `@LazyInject` will only resolve when its property is first accessed. To resolve properties eagerly use `@Inject` instead.
 
 ### Optional dependencies
-Dependencies that cannot be resolved can simply be marked as `Optional`s.
+Dependencies that under certain circumstances cannot be resolved can simply be marked as `Optional`s.
 ```Swift
 @Inject var player: MediaPlayer?
 ```
