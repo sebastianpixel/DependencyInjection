@@ -62,17 +62,26 @@ extension DIContainer: Resolver {
         Self.semaphore.wait()
         defer { Self.semaphore.signal() }
 
-        let identifier = ObjectIdentifier(T.self)
+        let identifier = (T.self as? OptionalProtocol.Type)?.wrappedObjectIdentifier ?? .init(T.self)
         let type = typeAliases[identifier, default: identifier]
+        let registration: Registration
 
-        guard let registration = registrations[type] else {
+        if let reg = registrations[type] {
+            registration = reg
+        } else if let optional = T.self as? ExpressibleByNilLiteral.Type {
+            // As "only the `Optional` type conforms to `ExpressibleByNilLiteral`"
+            // it's safe to assume that T is an Optional for which no initializer
+            // was registered.
+            return optional.init(nilLiteral: ()) as! T
+        } else {
             fatalError("Configuration error: No initializer registered for type \"\(T.self)\".")
         }
 
         if registration is New {
             return initialize(registration.initializer)
         } else {
-            if let sharedInstance = sharedInstances[type] as? T {
+            if !sharedInstances.isEmpty,
+                let sharedInstance = sharedInstances[type] as? T {
                 return sharedInstance
             }
             let instance = initialize(registration.initializer) as T
@@ -181,5 +190,15 @@ public struct Shared: Registration {
         self.identifier = ObjectIdentifier(T.self)
         self.aliases = typeAliases?.map(ObjectIdentifier.init)
         self.initializer = initializer
+    }
+}
+
+fileprivate protocol OptionalProtocol {
+    static var wrappedObjectIdentifier: ObjectIdentifier { get }
+}
+
+extension Optional: OptionalProtocol {
+    static var wrappedObjectIdentifier: ObjectIdentifier {
+        return .init(Wrapped.self)
     }
 }

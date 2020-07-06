@@ -11,6 +11,7 @@ final class DependencyInjectionTests: XCTestCase {
 
     @LazyInject private var dummy: DummyProtocol
     @LazyInject private var dummyType: DummyProtocol.Type
+    @LazyInject private var optionalDummy: DummyProtocol?
 
     override func setUp() {
         super.setUp()
@@ -38,12 +39,43 @@ final class DependencyInjectionTests: XCTestCase {
         XCTAssert(dummy === DIContainer.resolve(DummyProtocol.self))
     }
 
+    func testOptionalLazyInjectPropertyWrapperWithNewInstanceProtocolConformance() {
+        DIContainer.register(New(DummyClass() as DummyProtocol))
+        XCTAssertNotNil(optionalDummy)
+        XCTAssert(optionalDummy !== DIContainer.resolve(DummyProtocol.self))
+    }
+
+    func testOptionalLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance() {
+        DIContainer.register(Shared(DummyClass() as DummyProtocol))
+        XCTAssertNotNil(optionalDummy)
+        XCTAssert(optionalDummy === DIContainer.resolve(DummyProtocol.self))
+    }
+
+    func testOptionalLazyInjectPropertyWrapperWithNoRegisteredDependency() {
+        XCTAssertNil(optionalDummy)
+    }
+
     func testInjectPropertyWrapper() {
         class DummyWithInjectedProperty {
             @Inject var injectedProperty: DummyProtocol
         }
         DIContainer.register(Shared(DummyClass() as DummyProtocol))
         XCTAssert(DummyWithInjectedProperty().injectedProperty === DIContainer.resolve(DummyProtocol.self))
+    }
+
+    func testOptionalInjectPropertyWrapperWithRegisteredDependency() {
+        class DummyWithInjectedProperty {
+            @Inject var injectedProperty: DummyProtocol?
+        }
+        DIContainer.register(Shared(DummyClass() as DummyProtocol))
+        XCTAssert(DummyWithInjectedProperty().injectedProperty === DIContainer.resolve(DummyProtocol.self))
+    }
+
+    func testOptionalInjectPropertyWrapperWithoutRegisteredDependencyReturnsNil() {
+        class DummyWithInjectedProperty {
+            @Inject var injectedProperty: DummyProtocol?
+        }
+        XCTAssertNil(DummyWithInjectedProperty().injectedProperty)
     }
 
     func testAliasesReferenceSameInstance() {
@@ -107,7 +139,12 @@ final class DependencyInjectionTests: XCTestCase {
         ("testNewInstanceResolvesToDifferentInstance", testNewInstanceResolvesToDifferentInstance),
         ("testLazyInjectPropertyWrapperWithNewInstanceProtocolConformance", testLazyInjectPropertyWrapperWithNewInstanceProtocolConformance),
         ("testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance", testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance),
+        ("testOptionalLazyInjectPropertyWrapperWithNewInstanceProtocolConformance", testOptionalLazyInjectPropertyWrapperWithNewInstanceProtocolConformance),
+        ("testOptionalLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance", testOptionalLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance),
+        ("testOptionalLazyInjectPropertyWrapperWithNoRegisteredDependency", testOptionalLazyInjectPropertyWrapperWithNoRegisteredDependency),
         ("testInjectPropertyWrapper", testInjectPropertyWrapper),
+        ("testOptionalInjectPropertyWrapperWithRegisteredDependency", testOptionalInjectPropertyWrapperWithRegisteredDependency),
+        ("testOptionalInjectPropertyWrapperWithoutRegisteredDependencyReturnsNil", testOptionalInjectPropertyWrapperWithoutRegisteredDependencyReturnsNil),
         ("testAliasesReferenceSameInstance", testAliasesReferenceSameInstance),
         ("testOverrideRegistrationFromProductionInTests", testOverrideRegistrationFromProductionInTests),
         ("testOverrideOneAliasInTests", testOverrideOneAliasInTests),

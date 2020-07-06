@@ -31,20 +31,30 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 ```
+### Lazy vs eager evaluation
+As the initializers of the injected properties the example above would be called before the AppDelegate's initializer, it's necessary to separate usage and initialization of the injected property. `@LazyInject` will only resolve when its property is first accessed. To resolve properties eagerly use `@Inject` instead.
 
-As the initializers of the injected properties in this example would be called before the AppDelegate's initializer, it's necessary to separate usage and initialization of the injected property. `@LazyInject` will only resolve when its property is first accessed. To resolve properties eagerly use `@Inject` instead.
+### Optional dependencies
+Dependencies that cannot be resolve can be simple be made `Optional`s.
+```Swift
+@Inject var player: MediaPlayer?
+```
+During registration still a Non-`Optional` value would be provided.
 
+### Shared vs new instances
 Registering a dependency as `Shared` will always resolve to the same (identical) instance. To get a new instance in each property use `New`:
 ```Swift
 DIContainer.register(New(MockRouter.init as Router))
 ```
 By doing so registrations made in production code could for example be overridden by mock objects in tests that are not shared across objects.
 
+### Aliases
 Instances can also be registered with multiple alias protocols that each only expose certain parts of their functionality:
 ```Swift
 DIContainer.register(Shared(RouterImpl.init, as: Router.self, DeeplinkHandler.self))
 ```
 
+### Registering dependencies that have dependencies themselves
 In case the registered dependencies depend on other dependencies themselves that should be passed via initializer injection there are overloads for registering `Shared` and `New` instances that pass a `Resolver` object in a closure:
 ```Swift
 DIContainer.register {
@@ -52,6 +62,7 @@ DIContainer.register {
 }
 ```
 
+### Usage without property wrappers
 As property wrappers can currently not be used inside function bodies, dependencies can be resolved "manually":
 ```Swift
 func foo() {
