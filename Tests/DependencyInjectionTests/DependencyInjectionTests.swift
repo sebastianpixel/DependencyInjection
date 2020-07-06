@@ -83,6 +83,25 @@ final class DependencyInjectionTests: XCTestCase {
         XCTAssert(DIContainer.resolve(DummyClass.Type.self) == DummyClass.self)
     }
 
+    func testParallelAccessToSharedInstance() {
+        let dummy = DummyClass()
+        DIContainer.register(Shared(dummy))
+
+        let group = DispatchGroup()
+        let iterations = 10
+
+        for _ in 0 ..< iterations {
+            group.enter()
+        }
+
+        DispatchQueue.concurrentPerform(iterations: iterations) { _ in
+            XCTAssert(DIContainer.resolve(DummyClass.self) === dummy)
+            group.leave()
+        }
+
+        group.wait()
+    }
+
     static var allTests = [
         ("testSharedInstanceResolvesToIdenticalInstance", testSharedInstanceResolvesToIdenticalInstance),
         ("testNewInstanceResolvesToDifferentInstance", testNewInstanceResolvesToDifferentInstance),
@@ -93,6 +112,7 @@ final class DependencyInjectionTests: XCTestCase {
         ("testOverrideRegistrationFromProductionInTests", testOverrideRegistrationFromProductionInTests),
         ("testOverrideOneAliasInTests", testOverrideOneAliasInTests),
         ("testProtocolTypeRegistration", testProtocolTypeRegistration),
-        ("testClassTypeRegistration", testClassTypeRegistration)
+        ("testClassTypeRegistration", testClassTypeRegistration),
+        ("testParallelAccessToSharedInstance", testParallelAccessToSharedInstance)
     ]
 }

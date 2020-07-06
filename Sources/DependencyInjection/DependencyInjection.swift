@@ -43,6 +43,8 @@ public final class DIContainer {
     public static let resolve = shared as Resolver
 
     private init() {}
+
+    fileprivate static let semaphore = DispatchSemaphore(value: 1)
 }
 
 public protocol Resolver {
@@ -57,6 +59,9 @@ extension DIContainer: Resolver {
     }
 
     public func callAsFunction<T>(_: T.Type) -> T {
+        Self.semaphore.wait()
+        defer { Self.semaphore.signal() }
+
         let identifier = ObjectIdentifier(T.self)
         let type = typeAliases[identifier, default: identifier]
 
