@@ -10,6 +10,7 @@ final class DependencyInjectionTests: XCTestCase {
     private class DummyClass: DummyProtocol, AnotherDummyProtocol, YetAnotherDummyProtocol {}
 
     @LazyInject private var dummy: DummyProtocol
+    @LazyInject private var dummyType: DummyProtocol.Type
 
     override func setUp() {
         super.setUp()
@@ -71,6 +72,17 @@ final class DependencyInjectionTests: XCTestCase {
         XCTAssert(DIContainer.resolve(YetAnotherDummyProtocol.self) === sharedDummyClass)
     }
 
+    func testProtocolTypeRegistration() {
+        DIContainer.register(Shared(DummyClass.self as DummyProtocol.Type))
+        XCTAssert(dummyType == DummyClass.self)
+        XCTAssert(DIContainer.resolve(DummyProtocol.Type.self) == DummyClass.self)
+    }
+
+    func testClassTypeRegistration() {
+        DIContainer.register(Shared(DummyClass.self))
+        XCTAssert(DIContainer.resolve(DummyClass.Type.self) == DummyClass.self)
+    }
+
     static var allTests = [
         ("testSharedInstanceResolvesToIdenticalInstance", testSharedInstanceResolvesToIdenticalInstance),
         ("testNewInstanceResolvesToDifferentInstance", testNewInstanceResolvesToDifferentInstance),
@@ -78,6 +90,9 @@ final class DependencyInjectionTests: XCTestCase {
         ("testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance", testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance),
         ("testInjectPropertyWrapper", testInjectPropertyWrapper),
         ("testAliasesReferenceSameInstance", testAliasesReferenceSameInstance),
-        ("testOverrideRegistrationFromProductionInTests", testOverrideRegistrationFromProductionInTests)
+        ("testOverrideRegistrationFromProductionInTests", testOverrideRegistrationFromProductionInTests),
+        ("testOverrideOneAliasInTests", testOverrideOneAliasInTests),
+        ("testProtocolTypeRegistration", testProtocolTypeRegistration),
+        ("testClassTypeRegistration", testClassTypeRegistration)
     ]
 }
