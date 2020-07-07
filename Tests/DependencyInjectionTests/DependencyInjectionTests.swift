@@ -1,9 +1,9 @@
 import XCTest
 @testable import DependencyInjection
 
-protocol DummyProtocol: AnyObject {}
-protocol AnotherDummyProtocol: AnyObject {}
-protocol YetAnotherDummyProtocol: AnyObject {}
+fileprivate protocol DummyProtocol: AnyObject {}
+fileprivate protocol AnotherDummyProtocol: AnyObject {}
+fileprivate protocol YetAnotherDummyProtocol: AnyObject {}
 
 final class DependencyInjectionTests: XCTestCase {
 
@@ -108,21 +108,22 @@ final class DependencyInjectionTests: XCTestCase {
 
     func testParallelAccessToSharedInstance() {
         let dummy = DummyClass()
-        DIContainer.register(Shared(dummy))
-
         let group = DispatchGroup()
-        let iterations = 20
+        let iterationsPerLoop = 10
 
-        for _ in 0 ..< iterations {
-            group.enter()
+        iterationsPerLoop.times {
+            DIContainer.cleanUpForTesting()
+            DIContainer.register(Shared(dummy))
+
+            iterationsPerLoop.times(do: group.enter)
+
+            DispatchQueue.concurrentPerform(iterations: iterationsPerLoop) { _ in
+                XCTAssert(DIContainer.resolve(DummyClass.self) === dummy)
+                group.leave()
+            }
+
+            group.wait()
         }
-
-        DispatchQueue.concurrentPerform(iterations: iterations) { _ in
-            XCTAssert(DIContainer.resolve(DummyClass.self) === dummy)
-            group.leave()
-        }
-
-        group.wait()
     }
 
     func testNestedResolvingDoesNotBlockCurrentThread() {
@@ -191,4 +192,12 @@ final class DependencyInjectionTests: XCTestCase {
         ("testInjectPropertyWrapperIsMutable", testInjectPropertyWrapperIsMutable),
         ("testLazyInjectPropertyWrapperIsMutable", testLazyInjectPropertyWrapperIsMutable)
     ]
+}
+
+fileprivate extension Int {
+    func times(do block: () -> Void) {
+        for _ in 0 ..< self {
+            block()
+        }
+    }
 }

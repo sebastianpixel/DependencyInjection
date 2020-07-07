@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "DependencyInjection"
-  s.version      = "1.11.2"
+  s.version      = "1.11.3"
   s.summary      = "Microframework in Swift for dependency injection based on property wrappers."
   s.description  = <<-DESC
   DependencyInjection is a small framework that allows to register dependencies that resolve either to shared or new instances. Resolving is done either via `@Inject` and `@LazyInject` property wrappers or by calling `DIContainer.resolve()`.
