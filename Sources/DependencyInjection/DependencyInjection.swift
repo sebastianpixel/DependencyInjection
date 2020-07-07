@@ -37,7 +37,7 @@ public final class DIContainer {
 
     private static let shared = DIContainer()
 
-    private let lock = NSRecursiveLock()
+    private let queue = ReentrantQueue(label: "dependency_injection_resolving")
 
     private var registrations = [ObjectIdentifier: Registration]()
     private var sharedInstances = [ObjectIdentifier: Any]()
@@ -64,34 +64,33 @@ extension DIContainer: Resolver {
     }
 
     public func callAsFunction<T>(_: T.Type) -> T {
-        lock.lock()
-        defer { lock.unlock() }
+        queue.sync {
+            let identifier = (T.self as? OptionalProtocol.Type)?.wrappedObjectIdentifier ?? .init(T.self)
+            let type = typeAliases[identifier, default: identifier]
+            let registration: Registration
 
-        let identifier = (T.self as? OptionalProtocol.Type)?.wrappedObjectIdentifier ?? .init(T.self)
-        let type = typeAliases[identifier, default: identifier]
-        let registration: Registration
-
-        if let reg = registrations[type] {
-            registration = reg
-        } else if let optional = T.self as? ExpressibleByNilLiteral.Type {
-            // As "only the `Optional` type conforms to `ExpressibleByNilLiteral`"
-            // it's safe to assume that T is an Optional for which no initializer
-            // was registered.
-            return optional.init(nilLiteral: ()) as! T
-        } else {
-            fatalError("Configuration error: No initializer registered for type \"\(T.self)\".")
-        }
-
-        if registration is New {
-            return initialize(registration.initializer)
-        } else {
-            if !sharedInstances.isEmpty,
-                let sharedInstance = sharedInstances[type] as? T {
-                return sharedInstance
+            if let reg = registrations[type] {
+                registration = reg
+            } else if let optional = T.self as? ExpressibleByNilLiteral.Type {
+                // As "only the `Optional` type conforms to `ExpressibleByNilLiteral`"
+                // it's safe to assume that T is an Optional for which no initializer
+                // was registered.
+                return optional.init(nilLiteral: ()) as! T
+            } else {
+                fatalError("Configuration error: No initializer registered for type \"\(T.self)\".")
             }
-            let instance = initialize(registration.initializer) as T
-            sharedInstances[type] = instance
-            return instance
+
+            if registration is New {
+                return initialize(registration.initializer)
+            } else {
+                if !sharedInstances.isEmpty,
+                    let sharedInstance = sharedInstances[type] as? T {
+                    return sharedInstance
+                }
+                let instance = initialize(registration.initializer) as T
+                sharedInstances[type] = instance
+                return instance
+            }
         }
     }
 
