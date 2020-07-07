@@ -32,24 +32,24 @@ public struct LazyInject<T> {
 }
 
 public final class DIContainer {
+    public static let register = shared as Registrar
+    public static let resolve = shared as Resolver
+
+    private static let shared = DIContainer()
+
+    private let lock = NSRecursiveLock()
+
     private var registrations = [ObjectIdentifier: Registration]()
     private var sharedInstances = [ObjectIdentifier: Any]()
     private var typeAliases = [ObjectIdentifier: ObjectIdentifier]()
 
-    private static let shared = DIContainer()
+    private init() {}
 
     static func cleanUpForTesting() {
         shared.registrations.removeAll()
         shared.sharedInstances.removeAll()
         shared.typeAliases.removeAll()
     }
-
-    public static let register = shared as Registrar
-    public static let resolve = shared as Resolver
-
-    private init() {}
-
-    fileprivate static let semaphore = DispatchSemaphore(value: 1)
 }
 
 public protocol Resolver {
@@ -64,8 +64,8 @@ extension DIContainer: Resolver {
     }
 
     public func callAsFunction<T>(_: T.Type) -> T {
-        Self.semaphore.wait()
-        defer { Self.semaphore.signal() }
+        lock.lock()
+        defer { lock.unlock() }
 
         let identifier = (T.self as? OptionalProtocol.Type)?.wrappedObjectIdentifier ?? .init(T.self)
         let type = typeAliases[identifier, default: identifier]

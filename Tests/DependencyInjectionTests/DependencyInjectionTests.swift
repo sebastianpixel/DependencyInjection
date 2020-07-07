@@ -111,7 +111,7 @@ final class DependencyInjectionTests: XCTestCase {
         DIContainer.register(Shared(dummy))
 
         let group = DispatchGroup()
-        let iterations = 10
+        let iterations = 20
 
         for _ in 0 ..< iterations {
             group.enter()
@@ -123,6 +123,23 @@ final class DependencyInjectionTests: XCTestCase {
         }
 
         group.wait()
+    }
+
+    func testNestedResolvingDoesNotBlockCurrentThread() {
+        let expectation = XCTestExpectation(description: "Nested dependencies are not blocking")
+
+        DIContainer.register {
+            Shared(DummyClass() as DummyProtocol)
+            Shared(DummyWithInjectedProperty.init)
+            Shared(DummyWithNestedDependency.init)
+        }
+
+        DispatchQueue.global().async(flags: .barrier) {
+            _ = DIContainer.resolve(DummyWithNestedDependency.self)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 0.1)
     }
 
     func testInjectPropertyWrapperIsMutable() {
@@ -140,6 +157,10 @@ final class DependencyInjectionTests: XCTestCase {
         dummy = newDummy
         XCTAssert(dummy !== DIContainer.resolve(DummyProtocol.self))
         XCTAssert(dummy === newDummy)
+    }
+
+    private struct DummyWithNestedDependency {
+        @Inject var injectedProperty: DummyWithInjectedProperty
     }
 
     private struct DummyWithOptionalInjectedProperty {
