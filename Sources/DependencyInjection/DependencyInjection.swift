@@ -2,7 +2,7 @@ import Foundation
 
 @propertyWrapper
 public struct Inject<T> {
-    public let wrappedValue: T
+    public var wrappedValue: T
 
     public init() {
         wrappedValue = DIContainer.resolve(T.self)
@@ -10,16 +10,21 @@ public struct Inject<T> {
 }
 
 @propertyWrapper
-public class LazyInject<T> {
+public struct LazyInject<T> {
     private var value: T?
 
     public var wrappedValue: T {
-        if let value = value {
-            return value
-        } else {
-            let value = DIContainer.resolve(T.self)
-            self.value = value
-            return value
+        mutating get {
+            if let value = value {
+                return value
+            } else {
+                let value = DIContainer.resolve(T.self)
+                self.value = value
+                return value
+            }
+        }
+        set {
+            value = newValue
         }
     }
 

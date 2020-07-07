@@ -56,26 +56,17 @@ final class DependencyInjectionTests: XCTestCase {
     }
 
     func testInjectPropertyWrapper() {
-        class DummyWithInjectedProperty {
-            @Inject var injectedProperty: DummyProtocol
-        }
         DIContainer.register(Shared(DummyClass() as DummyProtocol))
         XCTAssert(DummyWithInjectedProperty().injectedProperty === DIContainer.resolve(DummyProtocol.self))
     }
 
     func testOptionalInjectPropertyWrapperWithRegisteredDependency() {
-        class DummyWithInjectedProperty {
-            @Inject var injectedProperty: DummyProtocol?
-        }
         DIContainer.register(Shared(DummyClass() as DummyProtocol))
         XCTAssert(DummyWithInjectedProperty().injectedProperty === DIContainer.resolve(DummyProtocol.self))
     }
 
     func testOptionalInjectPropertyWrapperWithoutRegisteredDependencyReturnsNil() {
-        class DummyWithInjectedProperty {
-            @Inject var injectedProperty: DummyProtocol?
-        }
-        XCTAssertNil(DummyWithInjectedProperty().injectedProperty)
+        XCTAssertNil(DummyWithOptionalInjectedProperty().injectedProperty)
     }
 
     func testAliasesReferenceSameInstance() {
@@ -134,6 +125,31 @@ final class DependencyInjectionTests: XCTestCase {
         group.wait()
     }
 
+    func testInjectPropertyWrapperIsMutable() {
+        DIContainer.register(Shared(DummyClass() as DummyProtocol))
+        var container = DummyWithInjectedProperty()
+        let dummy = DummyClass()
+        container.injectedProperty = dummy
+        XCTAssert(container.injectedProperty === dummy)
+    }
+
+    func testLazyInjectPropertyWrapperIsMutable() {
+        DIContainer.register(Shared(DummyClass() as DummyProtocol))
+        XCTAssert(dummy === DIContainer.resolve(DummyProtocol.self))
+        let newDummy = DummyClass()
+        dummy = newDummy
+        XCTAssert(dummy !== DIContainer.resolve(DummyProtocol.self))
+        XCTAssert(dummy === newDummy)
+    }
+
+    private struct DummyWithOptionalInjectedProperty {
+        @Inject var injectedProperty: DummyProtocol?
+    }
+
+    private struct DummyWithInjectedProperty {
+        @Inject var injectedProperty: DummyProtocol
+    }
+
     static var allTests = [
         ("testSharedInstanceResolvesToIdenticalInstance", testSharedInstanceResolvesToIdenticalInstance),
         ("testNewInstanceResolvesToDifferentInstance", testNewInstanceResolvesToDifferentInstance),
@@ -150,6 +166,8 @@ final class DependencyInjectionTests: XCTestCase {
         ("testOverrideOneAliasInTests", testOverrideOneAliasInTests),
         ("testProtocolTypeRegistration", testProtocolTypeRegistration),
         ("testClassTypeRegistration", testClassTypeRegistration),
-        ("testParallelAccessToSharedInstance", testParallelAccessToSharedInstance)
+        ("testParallelAccessToSharedInstance", testParallelAccessToSharedInstance),
+        ("testInjectPropertyWrapperIsMutable", testInjectPropertyWrapperIsMutable),
+        ("testLazyInjectPropertyWrapperIsMutable", testLazyInjectPropertyWrapperIsMutable)
     ]
 }
