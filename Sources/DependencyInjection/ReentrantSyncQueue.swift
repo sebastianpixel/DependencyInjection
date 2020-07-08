@@ -1,6 +1,6 @@
 import Dispatch
 
-final class ReentrantQueue {
+final class ReentrantSyncQueue {
     private static let key = DispatchSpecificKey<DispatchQueue>()
     private let queue: DispatchQueue
 

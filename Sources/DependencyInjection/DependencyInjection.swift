@@ -37,7 +37,7 @@ public final class DIContainer {
 
     private static let shared = DIContainer()
 
-    private let queue = ReentrantQueue(label: "dependency_injection_resolving")
+    private let queue = ReentrantSyncQueue(label: "dependency_injection_resolving")
 
     private var registrations = [ObjectIdentifier: Registration]()
     private var sharedInstances = [ObjectIdentifier: Any]()
@@ -64,25 +64,20 @@ extension DIContainer: Resolver {
     }
 
     public func callAsFunction<T>(_: T.Type) -> T {
-        queue.sync {
-            let identifier = (T.self as? OptionalProtocol.Type)?.wrappedObjectIdentifier ?? .init(T.self)
-            let type = typeAliases[identifier, default: identifier]
-            let registration: Registration
+        let identifier = (T.self as? OptionalProtocol.Type)?.wrappedObjectIdentifier ?? .init(T.self)
+        let type = typeAliases[identifier, default: identifier]
 
-            if let reg = registrations[type] {
-                registration = reg
-            } else if let optional = T.self as? ExpressibleByNilLiteral.Type {
-                // As "only the `Optional` type conforms to `ExpressibleByNilLiteral`"
-                // it's safe to assume that T is an Optional for which no initializer
-                // was registered.
+        guard let registration = registrations[type] else {
+            if let optional = T.self as? (ExpressibleByNilLiteral & OptionalProtocol).Type {
                 return optional.init(nilLiteral: ()) as! T
             } else {
                 fatalError("Configuration error: No initializer registered for type \"\(T.self)\".")
             }
+        }
 
-            if registration is New {
-                return initialize(registration.initializer)
-            } else {
+        return registration is New
+            ? initialize(registration.initializer)
+            : queue.sync {
                 if !sharedInstances.isEmpty,
                     let sharedInstance = sharedInstances[type] as? T {
                     return sharedInstance
@@ -90,7 +85,6 @@ extension DIContainer: Resolver {
                 let instance = initialize(registration.initializer) as T
                 sharedInstances[type] = instance
                 return instance
-            }
         }
     }
 
@@ -164,7 +158,7 @@ public extension Registration {
         self.init(typeAliases: typeAliases, initializer: initializer)
     }
 
-    init<T>(_ initializer: @autoclosure @escaping () -> T, as typeAliases: Any.Type...) {
+    init<T>(_ initializer: @escaping @autoclosure () -> T, as typeAliases: Any.Type...) {
         self.init(typeAliases: typeAliases, initializer: initializer)
     }
 
