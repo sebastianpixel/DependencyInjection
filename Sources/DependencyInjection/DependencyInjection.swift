@@ -78,8 +78,9 @@ extension DIContainer: Resolver {
         return registration is New
             ? initialize(registration.initializer)
             : queue.sync {
-                if !sharedInstances.isEmpty,
-                    let sharedInstance = sharedInstances[type] as? T {
+                let value = sharedInstances[type]
+                if value != nil,
+                    let sharedInstance = value as? T {
                     return sharedInstance
                 }
                 let instance = initialize(registration.initializer) as T
@@ -197,6 +198,6 @@ fileprivate protocol OptionalProtocol {
 
 extension Optional: OptionalProtocol {
     static var wrappedObjectIdentifier: ObjectIdentifier {
-        return .init(Wrapped.self)
+        .init(Wrapped.self)
     }
 }
