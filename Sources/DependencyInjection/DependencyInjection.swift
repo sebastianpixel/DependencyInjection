@@ -69,7 +69,7 @@ extension DIContainer: Resolver {
 
         guard let registration = registrations[type] else {
             if let optional = T.self as? (ExpressibleByNilLiteral & OptionalProtocol).Type {
-                return optional.init(nilLiteral: ()) as! T
+                return optional.init(nilLiteral: ()) as! T // swiftlint:disable:this force_cast
             } else {
                 fatalError("Configuration error: No initializer registered for type \"\(T.self)\".")
             }
@@ -94,6 +94,7 @@ extension DIContainer: Resolver {
         if let instance = instance as? T {
             return instance
         } else {
+            // swiftlint:disable:next line_length
             fatalError("Configuration error: Could not cast instance of type \"\(type(of: instance))\" to type \"\(T.self)\".")
         }
     }
@@ -192,12 +193,12 @@ public struct Shared: Registration {
     }
 }
 
-fileprivate protocol OptionalProtocol {
+private protocol OptionalProtocol {
     static var wrappedObjectIdentifier: ObjectIdentifier { get }
 }
 
 extension Optional: OptionalProtocol {
     static var wrappedObjectIdentifier: ObjectIdentifier {
-        .init(Wrapped.self)
+        return .init(Wrapped.self)
     }
 }

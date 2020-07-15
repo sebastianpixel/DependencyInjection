@@ -1,0 +1,93 @@
+disabled_rules: # rule identifiers to exclude from running
+  - function_parameter_count
+  - type_name
+opt_in_rules: # some rules are only opt-in
+  - control_statement
+  - trailing_newline
+  - colon
+  - comma
+  - empty_count
+  - empty_string
+  - fatal_error_message
+  - modifier_order
+  - prohibited_interface_builder
+  - toggle_bool
+  - unused_private_declaration
+  - fallthrough
+  - identical_operands
+  - joined_default_parameter
+  - unavailable_function
+  - mark
+  - custom_rules
+  - trailing_semicolon
+  - for_where
+  - todo
+  - first_where
+  - legacy_constructor
+  - force_try
+  - force_cast
+  - force_unwrapping
+  - unused_enumerated
+  - implicit_getter
+  - cyclomatic_complexity
+  - function_body_length
+  - dynamic_inline
+  - type_body_length
+  - unused_optional_binding
+  - operator_whitespace
+  - prohibited_super_call
+  - object_literal
+  - large_tuple
+  - shorthand_operator
+  - implicitly_unwrapped_optional
+  - class_delegate_protocol
+  - notification_center_detachment
+  - closure_parameter_position
+  - nesting
+  - switch_case_on_newline
+  - file_header
+  - conditional_returns_on_newline
+  - vertical_parameter_alignment_on_call
+  - identifier_name
+  - private_unit_test
+  - compiler_protocol_init
+  - attributes
+  - overridden_super_call
+  - vertical_parameter_alignment
+  - private_outlet
+  - generic_type_name
+  - discarded_notification_center_observer
+  - function_parameter_count
+  - syntactic_sugar
+  - valid_ibinspectable
+  - multiline_parameters
+  - extension_access_modifier
+  - line_length
+  - weak_delegate
+  - redundant_string_enum_value
+  - file_length
+
+included: # paths to include during linting. `--path` is ignored if present.
+  - Sources
+  - Tests
+excluded: # paths to ignore during linting. Takes precedence over `included`.
+
+# configurable rules can be customized from this configuration file
+# binary rules can set their severity level
+force_cast: warning # implicitly. Give warning only for force casting
+
+force_try:
+  severity: warning # explicitly. Give warning only for force try
+
+type_body_length:
+  - 300 # warning
+  - 400 # error
+
+# or they can set both explicitly
+file_length:
+  warning: 500
+  error: 800
+
+large_tuple: # warn user when using 3 values in tuple, give error if there are 4
+   - 3
+   - 4

@@ -1,9 +1,9 @@
 import XCTest
 @testable import DependencyInjection
 
-fileprivate protocol DummyProtocol: AnyObject {}
-fileprivate protocol AnotherDummyProtocol: AnyObject {}
-fileprivate protocol YetAnotherDummyProtocol: AnyObject {}
+private protocol DummyProtocol: AnyObject {}
+private protocol AnotherDummyProtocol: AnyObject {}
+private protocol YetAnotherDummyProtocol: AnyObject {}
 
 final class DependencyInjectionTests: XCTestCase {
 
@@ -172,6 +172,7 @@ final class DependencyInjectionTests: XCTestCase {
         @Inject var injectedProperty: DummyProtocol
     }
 
+    // swiftlint:disable line_length
     static var allTests = [
         ("testSharedInstanceResolvesToIdenticalInstance", testSharedInstanceResolvesToIdenticalInstance),
         ("testNewInstanceResolvesToDifferentInstance", testNewInstanceResolvesToDifferentInstance),
@@ -192,9 +193,10 @@ final class DependencyInjectionTests: XCTestCase {
         ("testInjectPropertyWrapperIsMutable", testInjectPropertyWrapperIsMutable),
         ("testLazyInjectPropertyWrapperIsMutable", testLazyInjectPropertyWrapperIsMutable)
     ]
+    // swiftlint:enable line_length
 }
 
-fileprivate extension Int {
+private extension Int {
     func times(do block: () -> Void) {
         for _ in 0 ..< self {
             block()
