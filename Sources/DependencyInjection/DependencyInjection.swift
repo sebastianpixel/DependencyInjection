@@ -55,6 +55,7 @@ public final class DIContainer {
 public protocol Resolver {
     func callAsFunction<T>() -> T
     func callAsFunction<T>(_: T.Type) -> T
+    func callAsFunction<T, A0>(_: T.Type, withParameters: A0)
 }
 
 extension DIContainer: Resolver {
@@ -63,11 +64,14 @@ extension DIContainer: Resolver {
         callAsFunction(T.self)
     }
 
-    public func callAsFunction<T>(_: T.Type) -> T {
-        let identifier = (T.self as? OptionalProtocol.Type)?.wrappedObjectIdentifier ?? .init(T.self)
-        let type = typeAliases[identifier, default: identifier]
+    public func callAsFunction<T, A0>(_: T.Type, withParameters: A0) {
 
-        guard let registration = registrations[type] else {
+    }
+
+    public func callAsFunction<T>(_: T.Type) -> T {
+        let identifier = self.identifier(T.self)
+
+        guard let registration = registrations[identifier] else {
             if let optional = T.self as? (ExpressibleByNilLiteral & OptionalProtocol).Type {
                 return optional.init(nilLiteral: ()) as! T // swiftlint:disable:this force_cast
             } else {
@@ -78,15 +82,20 @@ extension DIContainer: Resolver {
         return registration is New
             ? initialize(registration.initializer)
             : queue.sync {
-                let value = sharedInstances[type]
+                let value = sharedInstances[identifier]
                 if value != nil,
                     let sharedInstance = value as? T {
                     return sharedInstance
                 }
                 let instance = initialize(registration.initializer) as T
-                sharedInstances[type] = instance
+                sharedInstances[identifier] = instance
                 return instance
         }
+    }
+
+    private func identifier<T>(_ type: T.Type) -> ObjectIdentifier {
+        let identifier = (T.self as? OptionalProtocol.Type)?.wrappedObjectIdentifier ?? .init(T.self)
+        return typeAliases[identifier, default: identifier]
     }
 
     private func initialize<T>(_ initializer: () -> Any) -> T {
@@ -107,13 +116,24 @@ public struct RegistrationBuilder {
     }
 }
 
+@_functionBuilder
+public struct ModuleBuilder {
+    public static func buildBlock(_ modules: Module...) -> [Module] {
+        modules
+    }
+}
+
 public protocol Registrar {
     func callAsFunction(@RegistrationBuilder _ registrations: () -> [Registration])
     func callAsFunction(@RegistrationBuilder _ registration: () -> Registration)
     func callAsFunction(_ registration: Registration)
+
+    func callAsFunction(@ModuleBuilder _ modules: () -> [Module])
+    func callAsFunction(@ModuleBuilder _ module: () -> Module)
+    func callAsFunction(_ module: Module)
 }
 
-extension DIContainer: Registrar {
+extension Registrar {
     public func callAsFunction(@RegistrationBuilder _ registrations: () -> [Registration]) {
         registrations().forEach(callAsFunction)
     }
@@ -122,6 +142,16 @@ extension DIContainer: Registrar {
         callAsFunction(registration())
     }
 
+    public func callAsFunction(@ModuleBuilder _ modules: () -> [Module]) {
+        modules().forEach(callAsFunction)
+    }
+
+    public func callAsFunction(_ modules: () -> Module) {
+        callAsFunction(modules())
+    }
+}
+
+extension DIContainer: Registrar {
     public func callAsFunction(_ registration: Registration) {
         registration.aliases?.forEach {
             typeAliases[$0] = registration.identifier
@@ -132,6 +162,26 @@ extension DIContainer: Registrar {
         typeAliases[registration.identifier] = registration.identifier
 
         self.registrations[registration.identifier] = registration
+    }
+
+    public func callAsFunction(_ module: Module) {
+        module.registrations.forEach(callAsFunction)
+    }
+}
+
+public struct Module {
+    let registrations: [Registration]
+
+    public init(registration: Registration) {
+        registrations = [registration]
+    }
+
+    public init(@RegistrationBuilder _ registration: () -> Registration) {
+        self.init(registration: registration())
+    }
+
+    public init(@RegistrationBuilder _ registrations: () -> [Registration]) {
+        self.registrations = registrations()
     }
 }
 
@@ -199,6 +249,6 @@ private protocol OptionalProtocol {
 
 extension Optional: OptionalProtocol {
     static var wrappedObjectIdentifier: ObjectIdentifier {
-        return .init(Wrapped.self)
+        .init(Wrapped.self)
     }
 }

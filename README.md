@@ -63,6 +63,49 @@ DIContainer.register {
 }
 ```
 
+### Modules
+To group dependencies it's an option to use DI Modules. Those are convenience wrappers around registrations and can either be defined in different parts of the code base and then registered themselves e.g. in AppDelegate:
+```Swift
+// Feature 1
+
+struct FeatureOneDependencyInjection {
+    static let module = Module {
+        Shared(FeatureOneImplementation.init as FeatureOne)
+        New(FeatureOneViewModelImplementation.init as FeatureOneViewModel)
+    }
+}
+
+// Feature 2
+
+struct FeatureTwoDependencyInjection {
+    static let module = Module(Shared(FeatureTwoImplementation.init as FeatureTwo))
+}
+
+// AppDelegate
+
+override init() {
+    super.init()
+
+    DIContainer.register {
+        FeatureOneDependencyInjection.module
+        FeatureTwoDependencyInjection.module
+    }
+}
+```
+
+Alternatively Modules could also be used inline in a central location:
+```Swift
+DIContainer.register {
+    Module {
+        Shared(FeatureOneImplementation.init as FeatureOne)
+        New(FeatureOneViewModelImplementation.init as FeatureOneViewModel)
+    }
+    Module {
+        Shared(FeatureTwoImplementation.init as FeatureTwo)
+    }
+}
+```
+
 ### Usage without property wrappers
 As property wrappers can currently not be used inside function bodies, dependencies can be resolved "manually":
 ```Swift

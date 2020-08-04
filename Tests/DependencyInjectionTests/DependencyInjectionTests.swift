@@ -160,6 +160,15 @@ final class DependencyInjectionTests: XCTestCase {
         XCTAssert(dummy === newDummy)
     }
 
+    func testGroupRegistrationsInModule() {
+        let dummy = DummyClass()
+        let module = Module {
+            Shared(dummy as DummyProtocol)
+        }
+        DIContainer.register(module)
+        XCTAssert(dummy === DIContainer.resolve(DummyProtocol.self))
+    }
+
     private struct DummyWithNestedDependency {
         @Inject var injectedProperty: DummyWithInjectedProperty
     }
