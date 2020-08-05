@@ -1,13 +1,7 @@
 import XCTest
 @testable import DependencyInjection
 
-private protocol DummyProtocol: AnyObject {}
-private protocol AnotherDummyProtocol: AnyObject {}
-private protocol YetAnotherDummyProtocol: AnyObject {}
-
 final class DependencyInjectionTests: XCTestCase {
-
-    private class DummyClass: DummyProtocol, AnotherDummyProtocol, YetAnotherDummyProtocol {}
 
     @LazyInject private var dummy: DummyProtocol
     @LazyInject private var dummyType: DummyProtocol.Type
@@ -20,7 +14,7 @@ final class DependencyInjectionTests: XCTestCase {
     }
 
     func testSharedInstanceResolvesToIdenticalInstance() {
-        DIContainer.register(Shared(DummyClass()))
+        DIContainer.register(Shared(DummyClass.init))
         XCTAssert(DIContainer.resolve(DummyClass.self) === DIContainer.resolve(DummyClass.self))
     }
 
@@ -111,11 +105,13 @@ final class DependencyInjectionTests: XCTestCase {
         let group = DispatchGroup()
         let iterationsPerLoop = 10
 
-        iterationsPerLoop.times {
+        for _ in 0 ..< iterationsPerLoop {
             DIContainer.cleanUpForTesting()
             DIContainer.register(Shared(dummy))
 
-            iterationsPerLoop.times(do: group.enter)
+            for _ in 0 ..< iterationsPerLoop {
+                group.enter()
+            }
 
             DispatchQueue.concurrentPerform(iterations: iterationsPerLoop) { _ in
                 XCTAssert(DIContainer.resolve(DummyClass.self) === dummy)
@@ -169,16 +165,32 @@ final class DependencyInjectionTests: XCTestCase {
         XCTAssert(dummy === DIContainer.resolve(DummyProtocol.self))
     }
 
-    private struct DummyWithNestedDependency {
-        @Inject var injectedProperty: DummyWithInjectedProperty
+    func testParameterizedResolutionWithSingleProperty() {
+        DIContainer.register {
+            New { _, id in DummyWithOneProperty(id: id) as AnotherDummyProtocol }
+        }
+        let resolved = DIContainer.resolve(AnotherDummyProtocol.self, arguments: { "id" })
+        XCTAssertEqual("id", (resolved as! DummyWithOneProperty).id)
     }
 
-    private struct DummyWithOptionalInjectedProperty {
-        @Inject var injectedProperty: DummyProtocol?
+    func testParameterizedResolutionWithMultipleProperties() {
+        DIContainer.register {
+            New { _, id, name, age in
+                DummyWithMultipleProperties(id: id, name: name, age: age)
+            }
+        }
+        let resolved = DIContainer.resolve(DummyWithMultipleProperties.self) { ("id", "name", 1) }
+        XCTAssertEqual("id", resolved.id)
+        XCTAssertEqual("name", resolved.name)
+        XCTAssertEqual(1, resolved.age)
     }
 
-    private struct DummyWithInjectedProperty {
-        @Inject var injectedProperty: DummyProtocol
+    func testParameterizedResolutionWithTypeAlias() {
+        DIContainer.register {
+            New { _, id in DummyWithOneProperty(id: id) as AnotherDummyProtocol }
+        }
+        let resolved = DIContainer.resolve(AnotherDummyProtocol.self, arguments: { "id" })
+        XCTAssertEqual("id", (resolved as! DummyWithOneProperty).id)
     }
 
     // swiftlint:disable line_length
@@ -200,15 +212,11 @@ final class DependencyInjectionTests: XCTestCase {
         ("testClassTypeRegistration", testClassTypeRegistration),
         ("testParallelAccessToSharedInstance", testParallelAccessToSharedInstance),
         ("testInjectPropertyWrapperIsMutable", testInjectPropertyWrapperIsMutable),
-        ("testLazyInjectPropertyWrapperIsMutable", testLazyInjectPropertyWrapperIsMutable)
+        ("testLazyInjectPropertyWrapperIsMutable", testLazyInjectPropertyWrapperIsMutable),
+        ("testGroupRegistrationsInModule", testGroupRegistrationsInModule),
+        ("testParameterizedResolutionWithSingleProperty", testParameterizedResolutionWithSingleProperty),
+        ("testParameterizedResolutionWithMultipleProperties", testParameterizedResolutionWithMultipleProperties),
+        ("testParameterizedResolutionWithTypeAlias", testParameterizedResolutionWithTypeAlias)
     ]
     // swiftlint:enable line_length
-}
-
-private extension Int {
-    func times(do block: () -> Void) {
-        for _ in 0 ..< self {
-            block()
-        }
-    }
 }

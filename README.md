@@ -124,3 +124,28 @@ func bar(router: Router) {
     // …
 }
 ```
+
+### Parameterized resolution
+If inversion of control should not only be applied to types where all parameters are present on registration it's possible to provide arguments at a later point, when resolving the dependency:
+```Swift
+func register() {
+    DIContainer.register {
+        New({ resolver, id in ConcreteViewModel(id: id) }, as: ViewModelProtocol.self)
+
+        // alternatively:
+        New { _, id in ConcreteViewModel(id: id) as ViewModelProtocol }
+    }
+}
+```
+
+The `id` argument needs to be provided to use an instance implementing `ViewModelProtocol`. The first argument `resolver` can be used or ignored to resolve further arguments via dependency injection. Providing the argument is done in a closure:
+```Swift
+func resolve() -> ViewModelProtocol {
+    DIContainer.resolve(ViewModelProtocol.self, arguments: { "id_goes_here" })
+
+    // multiple arguments are provided as tuple:
+    DIContainer.resolve(PresenterProtocol.self) { ("argument 1", 23, "argument 3") }
+}
+```
+
+As initializers of properties (and Property Wrappers for that matter) are called before `self` is available in Swift only hard coded arguments could be provided in initalizers of `@Inject` and `@LazyInject`. Parameterized resolution is therefore currently limited to the `resolve` method of `DIContainer` as shown above.
