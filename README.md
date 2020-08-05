@@ -70,15 +70,15 @@ To group dependencies it's an option to use DI Modules. Those are convenience wr
 
 struct FeatureOneDependencyInjection {
     static let module = Module {
-        Shared(FeatureOneImplementation.init as FeatureOne)
-        New(FeatureOneViewModelImplementation.init as FeatureOneViewModel)
+        Shared(FeatureOneImplementation() as FeatureOne)
+        New(FeatureOneViewModelImplementation() as FeatureOneViewModel)
     }
 }
 
 // Feature 2
 
 struct FeatureTwoDependencyInjection {
-    static let module = Module(Shared(FeatureTwoImplementation.init as FeatureTwo))
+    static let module = Module(Shared(FeatureTwoImplementation() as FeatureTwo))
 }
 
 // AppDelegate
@@ -97,11 +97,11 @@ Alternatively Modules could also be used inline in a central location:
 ```Swift
 DIContainer.register {
     Module {
-        Shared(FeatureOneImplementation.init as FeatureOne)
-        New(FeatureOneViewModelImplementation.init as FeatureOneViewModel)
+        Shared(FeatureOneImplementation() as FeatureOne)
+        New(FeatureOneViewModelImplementation() as FeatureOneViewModel)
     }
     Module {
-        Shared(FeatureTwoImplementation.init as FeatureTwo)
+        Shared(FeatureTwoImplementation() as FeatureTwo)
     }
 }
 ```
