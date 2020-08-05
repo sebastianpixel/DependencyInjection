@@ -6,7 +6,7 @@ public final class DIContainer {
 
     private static let shared = DIContainer()
 
-    private let queue = ReentrantSyncQueue(label: "dependency_injection_resolving")
+    private let queue = ReentrantSyncQueue(label: "dependency_injection")
 
     private var registrations = [ObjectIdentifier: Registration]()
     private var sharedInstances = [ObjectIdentifier: Any]()
@@ -23,15 +23,17 @@ public final class DIContainer {
 
 extension DIContainer: Registrar {
     public func callAsFunction(_ registration: Registration) {
-        registration.aliases?.forEach {
-            typeAliases[$0] = registration.identifier
+        queue.sync {
+            registration.aliases?.forEach {
+                typeAliases[$0] = registration.identifier
+            }
+
+            // Identifier is an alias for itself in case a previously
+            // registered alias should be overridden e.g. for a test.
+            typeAliases[registration.identifier] = registration.identifier
+
+            registrations[registration.identifier] = registration
         }
-
-        // Identifier is an alias for itself in case a previously
-        // registered alias should be overridden e.g. for a test.
-        typeAliases[registration.identifier] = registration.identifier
-
-        registrations[registration.identifier] = registration
     }
 
     public func callAsFunction(_ module: Module) {
@@ -52,14 +54,15 @@ extension DIContainer: Resolver {
     public func callAsFunction<T>(_: T.Type, arguments: [Any]) -> T {
         let identifier = self.identifier(T.self)
 
-        guard var registration = registrations[identifier] else {
-            return handleOptionalFallback(T.self)
-        }
-        registration.arguments = arguments
+        return queue.sync {
+            guard var registration = registrations[identifier] else {
+                return handleOptionalFallback(T.self)
+            }
+            registration.arguments = arguments
 
-        return registration is New
-            ? initialize(registration.initializer)
-            : queue.sync {
+            if registration is New {
+                return initialize(registration.initializer)
+            } else {
                 let value = sharedInstances[identifier]
                 if value != nil,
                     let sharedInstance = value as? T {
@@ -68,6 +71,7 @@ extension DIContainer: Resolver {
                 let instance = initialize(registration.initializer) as T
                 sharedInstances[identifier] = instance
                 return instance
+            }
         }
     }
 
