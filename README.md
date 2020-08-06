@@ -45,7 +45,7 @@ Note: If an Optional would be registered `player` also resolves to `nil` as the 
 ### Shared vs new instances
 Registering a dependency as `Shared` will always resolve to the same (identical) instance. To get a new instance in each property use `New`:
 ```Swift
-DIContainer.register(New(MockRouter.init as Router))
+DIContainer.register(New(MockRouter() as Router))
 ```
 By doing so registrations made in production code could for example be overridden by mock objects in tests that are not shared across objects.
 
