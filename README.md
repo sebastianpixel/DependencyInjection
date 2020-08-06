@@ -149,3 +149,6 @@ func resolve() -> ViewModelProtocol {
 ```
 
 As initializers of properties (and Property Wrappers for that matter) are called before `self` is available in Swift only hard coded arguments could be provided in initalizers of `@Inject` and `@LazyInject`. Parameterized resolution is therefore currently limited to the `resolve` method of `DIContainer` as shown above.
+
+### Thread safety
+Registering as well as resolving dependencies is handled on a dedicated synchronous and reentrant queue.
