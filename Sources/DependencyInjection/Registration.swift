@@ -37,6 +37,7 @@ public extension Registration {
 
 // MARK: - Parameterized Resolution without Type Aliases
 
+// swiftlint:disable force_cast
 public extension Registration {
     init<T, A0>(_ initializer: @escaping (Resolver, A0) -> T) {
         let _initializer: () -> T = { fatalError() }
@@ -352,3 +353,4 @@ public extension Registration {
         }
     }
 }
+// swiftlint:enable force_cast
