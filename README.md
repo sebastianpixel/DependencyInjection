@@ -34,6 +34,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 ### Lazy vs eager evaluation
 As the initializers of the injected properties the example above would be called before the AppDelegate's initializer, it's necessary to separate usage and initialization of the injected property. `@LazyInject` will only resolve when its property is first accessed. To resolve properties eagerly use `@Inject` instead.
 
+### Mutable vs immutable injected properties
+Properties injected via `@Inject` and `@LazyInject` are immutable which is enforced by the compiler. To resolve mutable properties use `@MutableInject` and `@MutableLazyInject`.
+
 ### Optional dependencies
 Dependencies that under certain circumstances cannot be resolved can simply be marked as `Optional`s.
 ```Swift

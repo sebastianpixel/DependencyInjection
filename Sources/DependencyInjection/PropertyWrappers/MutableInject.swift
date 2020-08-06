@@ -1,6 +1,6 @@
 @propertyWrapper
-public struct Inject<T> {
-    public let wrappedValue: T
+public struct MutableInject<T> {
+    public var wrappedValue: T
 
     public init() {
         wrappedValue = DIContainer.resolve(T.self)

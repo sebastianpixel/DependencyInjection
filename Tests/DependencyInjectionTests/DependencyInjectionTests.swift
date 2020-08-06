@@ -3,10 +3,6 @@ import XCTest
 
 final class DependencyInjectionTests: XCTestCase {
 
-    @LazyInject private var dummy: DummyProtocol
-    @LazyInject private var dummyType: DummyProtocol.Type
-    @LazyInject private var optionalDummy: DummyProtocol?
-
     override func setUp() {
         super.setUp()
 
@@ -25,28 +21,32 @@ final class DependencyInjectionTests: XCTestCase {
 
     func testLazyInjectPropertyWrapperWithNewInstanceProtocolConformance() {
         DIContainer.register(New(DummyClass() as DummyProtocol))
-        XCTAssert(dummy !== DIContainer.resolve(DummyProtocol.self))
+        let container = DummyWithLazyInjectedProperty()
+        XCTAssert(container.injectedProperty !== DIContainer.resolve(DummyProtocol.self))
     }
 
     func testLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance() {
         DIContainer.register(Shared(DummyClass() as DummyProtocol))
-        XCTAssert(dummy === DIContainer.resolve(DummyProtocol.self))
+        let container = DummyWithLazyInjectedProperty()
+        XCTAssert(container.injectedProperty === DIContainer.resolve(DummyProtocol.self))
     }
 
     func testOptionalLazyInjectPropertyWrapperWithNewInstanceProtocolConformance() {
         DIContainer.register(New(DummyClass() as DummyProtocol))
-        XCTAssertNotNil(optionalDummy)
-        XCTAssert(optionalDummy !== DIContainer.resolve(DummyProtocol.self))
+        let container = DummyWithOptionalLazyInjectedProperty()
+        XCTAssertNotNil(container.injectedProperty)
+        XCTAssert(container.injectedProperty !== DIContainer.resolve(DummyProtocol.self))
     }
 
     func testOptionalLazyInjectPropertyWrapperWithSharedInstancesAndProtocolConformance() {
         DIContainer.register(Shared(DummyClass() as DummyProtocol))
-        XCTAssertNotNil(optionalDummy)
-        XCTAssert(optionalDummy === DIContainer.resolve(DummyProtocol.self))
+        let container = DummyWithOptionalLazyInjectedProperty()
+        XCTAssertNotNil(container.injectedProperty)
+        XCTAssert(container.injectedProperty === DIContainer.resolve(DummyProtocol.self))
     }
 
     func testOptionalLazyInjectPropertyWrapperWithNoRegisteredDependency() {
-        XCTAssertNil(optionalDummy)
+        XCTAssertNil(DummyWithOptionalLazyInjectedProperty().injectedProperty)
     }
 
     func testInjectPropertyWrapper() {
@@ -91,7 +91,15 @@ final class DependencyInjectionTests: XCTestCase {
 
     func testProtocolTypeRegistration() {
         DIContainer.register(Shared(DummyClass.self as DummyProtocol.Type))
-        XCTAssert(dummyType == DummyClass.self)
+        let container = DummyWithInjectedPropertyType()
+        XCTAssert(container.injectedType == DummyClass.self)
+        XCTAssert(DIContainer.resolve(DummyProtocol.Type.self) == DummyClass.self)
+    }
+
+    func testProtocolTypeLazyRegistration() {
+        DIContainer.register(Shared(DummyClass.self as DummyProtocol.Type))
+        let container = DummyWithLazyInjectedPropertyType()
+        XCTAssert(container.injectedType == DummyClass.self)
         XCTAssert(DIContainer.resolve(DummyProtocol.Type.self) == DummyClass.self)
     }
 
@@ -139,21 +147,24 @@ final class DependencyInjectionTests: XCTestCase {
         wait(for: [expectation], timeout: 0.1)
     }
 
-    func testInjectPropertyWrapperIsMutable() {
+    func testMutableInjectPropertyWrapperIsMutable() {
         DIContainer.register(Shared(DummyClass() as DummyProtocol))
-        var container = DummyWithInjectedProperty()
-        let dummy = DummyClass()
-        container.injectedProperty = dummy
-        XCTAssert(container.injectedProperty === dummy)
+        var container = DummyWithMutableInjectedProperty()
+        XCTAssert(container.injectedProperty === DIContainer.resolve(DummyProtocol.self))
+        let newInjectedProperty = DummyClass()
+        container.injectedProperty = newInjectedProperty
+        XCTAssert(newInjectedProperty !== DIContainer.resolve(DummyProtocol.self))
+        XCTAssert(container.injectedProperty === newInjectedProperty)
     }
 
-    func testLazyInjectPropertyWrapperIsMutable() {
+    func testMutableLazyInjectPropertyWrapperIsMutable() {
         DIContainer.register(Shared(DummyClass() as DummyProtocol))
-        XCTAssert(dummy === DIContainer.resolve(DummyProtocol.self))
-        let newDummy = DummyClass()
-        dummy = newDummy
-        XCTAssert(dummy !== DIContainer.resolve(DummyProtocol.self))
-        XCTAssert(dummy === newDummy)
+        var container = DummyWithMutableLazyInjectedProperty()
+        XCTAssert(container.injectedProperty === DIContainer.resolve(DummyProtocol.self))
+        let newInjectedProperty = DummyClass()
+        container.injectedProperty = newInjectedProperty
+        XCTAssert(newInjectedProperty !== DIContainer.resolve(DummyProtocol.self))
+        XCTAssert(container.injectedProperty === newInjectedProperty)
     }
 
     func testGroupRegistrationsInModule() {
@@ -209,10 +220,11 @@ final class DependencyInjectionTests: XCTestCase {
         ("testOverrideRegistrationFromProductionInTests", testOverrideRegistrationFromProductionInTests),
         ("testOverrideOneAliasInTests", testOverrideOneAliasInTests),
         ("testProtocolTypeRegistration", testProtocolTypeRegistration),
+        ("testProtocolTypeLazyRegistration", testProtocolTypeLazyRegistration),
         ("testClassTypeRegistration", testClassTypeRegistration),
         ("testParallelAccessToSharedInstance", testParallelAccessToSharedInstance),
-        ("testInjectPropertyWrapperIsMutable", testInjectPropertyWrapperIsMutable),
-        ("testLazyInjectPropertyWrapperIsMutable", testLazyInjectPropertyWrapperIsMutable),
+        ("testMutableInjectPropertyWrapperIsMutable", testMutableInjectPropertyWrapperIsMutable),
+        ("testMutableLazyInjectPropertyWrapperIsMutable", testMutableLazyInjectPropertyWrapperIsMutable),
         ("testGroupRegistrationsInModule", testGroupRegistrationsInModule),
         ("testParameterizedResolutionWithSingleProperty", testParameterizedResolutionWithSingleProperty),
         ("testParameterizedResolutionWithMultipleProperties", testParameterizedResolutionWithMultipleProperties),
