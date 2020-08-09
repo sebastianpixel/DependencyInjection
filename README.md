@@ -129,7 +129,7 @@ func bar(router: Router) {
 ```
 
 ### Parameterized resolution
-If inversion of control should not only be applied to types where all parameters are present on registration it's possible to provide arguments at a later point, when resolving the dependency:
+If inversion of control should not only be applied to types where some or all arguments are provided at a later point it's possible to register a closure that receives arguments and returns the desired object. In this case it makes most sense to register a `New` instance, meaning every time the dependency is resolved a new object is created. If a `Shared` instance would be registered the resolved instances would always be the one that was first resolved for the respective type and arguments would be ignored.
 ```Swift
 func register() {
     DIContainer.register {
