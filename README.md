@@ -67,7 +67,7 @@ DIContainer.register {
 ```
 
 ### Modules
-To group dependencies it's an option to use DI Modules. Those are convenience wrappers around registrations and can either be defined in different parts of the code base and then registered themselves e.g. in AppDelegate:
+To group dependencies or to avoid exposing concrete types outside a Swift module it's an option to use DI Modules. Those are convenience wrappers around registrations and can either be defined in different parts of the code base and then registered themselves e.g. in AppDelegate:
 ```Swift
 // Feature 1
 
