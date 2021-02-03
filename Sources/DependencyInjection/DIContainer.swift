@@ -12,6 +12,12 @@ public final class DIContainer {
     private var sharedInstances = [ObjectIdentifier: Any]()
     private var typeAliases = [ObjectIdentifier: ObjectIdentifier]()
 
+    private lazy var registerDependenciesOnce: Void = {
+        if let registering = DIContainer.self as? DependencyRegistering.Type {
+            registering.registerDependencies()
+        }
+    }()
+
     private init() {}
 
     static func cleanUpForTesting() {
@@ -55,6 +61,8 @@ extension DIContainer: Resolver {
         let identifier = self.identifier(T.self)
 
         return queue.sync {
+            _ = registerDependenciesOnce
+
             guard var registration = registrations[identifier] else {
                 return handleOptionalFallback(T.self)
             }

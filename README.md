@@ -109,6 +109,16 @@ DIContainer.register {
 }
 ```
 
+### Alternative registering outside AppDelegate
+Dependencies can be registered by conforming `DIContainer` to the `DependencyRegistering` protocol and implementing the `registerDependencies` method. Dependencies will then be registered once the first dependency is resolved.
+```Swift
+extension DIContainer: DependencyRegistering {
+    static func registerDependencies() {
+        register(Shared(RouterImpl() as Router))
+    }
+}
+```
+
 ### Usage without property wrappers
 As property wrappers can currently not be used inside function bodies, dependencies can be resolved "manually":
 ```Swift
