@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
 DESC
   s.homepage     = "https://github.com/sebastianpixel/DependencyInjection"
   s.authors            = "Sebastian Pickl"
-  s.social_media_url   = "http://twitter.com/SebastianPickl"
+  s.social_media_url   = "https://twitter.com/SebastianPickl"
   s.license      = { :type => "MIT", :file => "LICENSE" }
   s.swift_versions = "5.3"
   s.ios.deployment_target  = '9.0'
