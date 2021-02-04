@@ -155,7 +155,9 @@ The `id` argument needs to be provided to use an instance implementing `ViewMode
 ```Swift
 func resolve() -> ViewModelProtocol {
     DIContainer.resolve(ViewModelProtocol.self, arguments: { "id_goes_here" })
+}
 
+func resolve() -> PresenterProtocol {
     // multiple arguments are provided as tuple:
     DIContainer.resolve(PresenterProtocol.self) { ("argument 1", 23, "argument 3") }
 }
