@@ -51,3 +51,5 @@ struct DummyWithInjectedPropertyType {
 struct DummyWithLazyInjectedPropertyType {
     @LazyInject var injectedType: DummyProtocol.Type
 }
+
+struct DummyRegisteredInDependencyRegisteringConformanceImplementation {}

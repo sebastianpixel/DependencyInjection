@@ -6,7 +6,8 @@ final class DependencyInjectionTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        DIContainer.cleanUpForTesting()
+        let container = DIContainer()
+        DIContainer.shared = container
     }
 
     func testSharedInstanceResolvesToIdenticalInstance() {
@@ -114,7 +115,7 @@ final class DependencyInjectionTests: XCTestCase {
         let iterationsPerLoop = 10
 
         for _ in 0 ..< iterationsPerLoop {
-            DIContainer.cleanUpForTesting()
+            DIContainer.shared.cleanUpForTesting()
             DIContainer.register(Shared(dummy))
 
             for _ in 0 ..< iterationsPerLoop {
@@ -204,6 +205,23 @@ final class DependencyInjectionTests: XCTestCase {
         XCTAssertEqual("id", (resolved as! DummyWithOneProperty).id)
     }
 
+    func testRegisteringByImplementingDependencyRegistering() {
+        shouldRegisterDependencies = true
+
+        let resolved = DIContainer.resolve(DummyRegisteredInDependencyRegisteringConformanceImplementation?.self)
+        XCTAssertNotNil(resolved)
+    }
+
+    func testRegisterDependenciesInDependencyRegisteringImplementationIsCalledOnlyOnce() {
+        shouldRegisterDependencies = true
+
+        XCTAssertEqual(invocationCount, 0)
+        _ = DIContainer.resolve(DummyRegisteredInDependencyRegisteringConformanceImplementation?.self)
+        XCTAssertEqual(invocationCount, 1)
+        _ = DIContainer.resolve(DummyRegisteredInDependencyRegisteringConformanceImplementation?.self)
+        XCTAssertEqual(invocationCount, 1)
+    }
+
     // swiftlint:disable line_length
     static var allTests = [
         ("testSharedInstanceResolvesToIdenticalInstance", testSharedInstanceResolvesToIdenticalInstance),
@@ -231,4 +249,16 @@ final class DependencyInjectionTests: XCTestCase {
         ("testParameterizedResolutionWithTypeAlias", testParameterizedResolutionWithTypeAlias)
     ]
     // swiftlint:enable line_length
+}
+
+private var shouldRegisterDependencies = false
+private var invocationCount = 0
+
+extension DIContainer: DependencyRegistering {
+    public static func registerDependencies() {
+        if shouldRegisterDependencies {
+            invocationCount += 1
+            register(Shared(DummyRegisteredInDependencyRegisteringConformanceImplementation()))
+        }
+    }
 }

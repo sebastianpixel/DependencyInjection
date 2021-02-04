@@ -1,10 +1,10 @@
 import Foundation
 
 public final class DIContainer {
-    public static let register = shared as Registrar
-    public static let resolve = shared as Resolver
+    public static var register: Registrar { shared }
+    public static var resolve: Resolver { shared }
 
-    private static let shared = DIContainer()
+    static var shared = DIContainer()
 
     private let queue = ReentrantSyncQueue(label: "dependency_injection")
 
@@ -18,12 +18,10 @@ public final class DIContainer {
         }
     }()
 
-    private init() {}
-
-    static func cleanUpForTesting() {
-        shared.registrations.removeAll()
-        shared.sharedInstances.removeAll()
-        shared.typeAliases.removeAll()
+    func cleanUpForTesting() {
+        registrations.removeAll()
+        sharedInstances.removeAll()
+        typeAliases.removeAll()
     }
 }
 
